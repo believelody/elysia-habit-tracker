@@ -1,19 +1,18 @@
 import { Elysia, t } from "elysia";
 import {
+  HabitHistoryItem,
+  HabitHistoryList,
+  HabitItem,
+} from "../../components/habits.component";
+import { EditHabitModal } from "../../components/modals.component";
+import { context } from "../../context";
+import {
   habitHistoryService,
   habitService,
 } from "../../services/habits.service";
-import { html } from "@elysiajs/html";
-import {
-  type HabitHistory,
-  HabitItem,
-  HabitHistoryItem,
-  HabitHistoryList,
-} from "../../components/habits.component";
-import { EditHabitModal } from "../../components/modals.component";
 
 export const habitApiController = new Elysia({ prefix: "/habits" })
-  .use(html())
+  .use(context)
   .post(
     "/",
     async ({ body, set, html }) => {
@@ -27,7 +26,16 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
         return "An error occured";
       }
       set.status = "Created";
-      return html(<HabitItem item={createdHabit} />);
+
+      return html(
+        <HabitItem
+          item={createdHabit}
+          triggerNotification={{
+            type: "success",
+            message: "Habit created successfully",
+          }}
+        />
+      );
     },
     {
       body: t.Object({
@@ -61,7 +69,7 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
             }),
           }
         )
-        .get("/histories", ctx => {
+        .get("/histories", (ctx) => {
           const { id } = ctx.params;
           const existingHabit = habitService.findById(id);
           if (!existingHabit) {
@@ -110,23 +118,19 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
           "/",
           async ({ body, set, html, params }) => {
             const { id } = params;
-            // if (body.color === "#000000") {
-            //   set.status = "Internal Server Error";
-            //   return "Please select another color than black";
-            // }
             const updatedHabit = habitService.updateById(id, body);
             if (!updatedHabit) {
               set.status = "Internal Server Error";
               return "An error occured";
             }
             set.status = "OK";
-            return html(<HabitItem item={updatedHabit} />);
+
+            return html(<HabitItem item={updatedHabit} triggerNotification={{ type: "success", message: "Habit updated successfully" }} />);
           },
           {
             body: t.Object({
               title: t.String(),
               description: t.String(),
-              color: t.String(),
             }),
           }
         )
@@ -134,13 +138,11 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
           const { id } = ctx.params;
           habitService.deleteById(id);
           ctx.set.status = "No Content";
-          return null;
+          return;
         })
   )
   .onError(({ code, set, error }) => {
     console.log({ code, error });
-    if (code === "UNKNOWN") {
-      set.status = "Internal Server Error";
-      return "An error occured";
-    }
+    set.status = "Internal Server Error";
+    return "An error occured";
   });
