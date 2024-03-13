@@ -1,5 +1,8 @@
 import classNames from "classnames";
-import { generateDatesByNumberOfDays, generateDatesWithCompletion } from "../lib";
+import {
+  generateDatesByNumberOfDays,
+  generateDatesWithCompletion,
+} from "../lib";
 import { Notification } from "./notifications.component";
 
 type HabitFormFieldProps = {
@@ -192,8 +195,12 @@ export function HabitComponent({ item }: { item: Habit }) {
       hx-target={`#${habitHistories}`}
       hx-swap="outerHTML"
     >
-      <h2 class={"text-xl font-medium"} safe>{item.title}</h2>
-      <p class={"text-md text-slate-400"} safe>{item.description}</p>
+      <h2 class={"text-xl font-medium"} safe>
+        {item.title}
+      </h2>
+      <p class={"text-md text-slate-400"} safe>
+        {item.description}
+      </p>
       <div id={habitHistories} />
       <div class={"flex gap-x-4"}>
         <button
@@ -216,9 +223,16 @@ export function HabitComponent({ item }: { item: Habit }) {
             "px-3 py-2 rounded border text-red-600 hover:bg-red-600 hover:text-white"
           }
           hx-delete={`/api/habits/${item.id}`}
-          hx-swap="delete"
-          hx-target="closest li"
+          hx-swap="afterbegin"
+          hx-target="#notification-list"
           hx-confirm="Are you sure ?"
+          x-init={`
+            $el.addEventListener("htmx:afterRequest", ({ detail }) => {
+              if (detail.xhr.status === 200) {
+                document.querySelector("#habit-item-${item.id}").remove();
+              }
+            })
+          `}
         >
           Delete
         </button>
@@ -226,19 +240,6 @@ export function HabitComponent({ item }: { item: Habit }) {
     </section>
   );
 }
-
-// export function HabitItem({ item }: { item: Habit }) {
-//   return (
-//     <li x-data="{ showForm: false }">
-//       <div x-show="showForm">
-//         <EditHabitForm {...item} />
-//       </div>
-//       <div x-show="!showForm">
-//         <HabitComponent item={item} />
-//       </div>
-//     </li>
-//   );
-// }
 
 export function HabitItem({
   item,
@@ -284,7 +285,7 @@ export function Habits({ habits }: HabitsProps) {
 export function HabitHistoryItem({
   habit,
   date,
-  completed
+  completed,
 }: {
   habit: Habit;
   date: string;
@@ -303,7 +304,13 @@ export function HabitHistoryItem({
   );
 }
 
-export function HabitHistoryList({ habit, histories }: { habit: Habit; histories: HabitHistory[] }) {
+export function HabitHistoryList({
+  habit,
+  histories,
+}: {
+  habit: Habit;
+  histories: HabitHistory[];
+}) {
   const dates = generateDatesByNumberOfDays(90);
   return (
     <ul class={"flex gap-1 flex-wrap"}>

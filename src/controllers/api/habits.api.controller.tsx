@@ -10,6 +10,7 @@ import {
   habitHistoryService,
   habitService,
 } from "../../services/habits.service";
+import { type Notification, NotificationItem } from "../../components/notifications.component";
 
 export const habitApiController = new Elysia({ prefix: "/habits" })
   .use(context)
@@ -125,7 +126,15 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
             }
             set.status = "OK";
 
-            return html(<HabitItem item={updatedHabit} triggerNotification={{ type: "success", message: "Habit updated successfully" }} />);
+            return html(
+              <HabitItem
+                item={updatedHabit}
+                triggerNotification={{
+                  type: "success",
+                  message: "Habit updated successfully",
+                }}
+              />
+            );
           },
           {
             body: t.Object({
@@ -138,7 +147,12 @@ export const habitApiController = new Elysia({ prefix: "/habits" })
           const { id } = ctx.params;
           habitService.deleteById(id);
           ctx.set.status = "No Content";
-          return;
+
+          const notification: Notification = {
+            type: "success",
+            message: "Habit deleted successfully",
+          };
+          return ctx.html(<NotificationItem {...notification} />);
         })
   )
   .onError(({ code, set, error }) => {
