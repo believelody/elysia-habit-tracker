@@ -12,8 +12,7 @@ export function Modal({ children, ref }: ModalProps) {
             $refs["${ref}"].remove();
           },
           removerEscape: {
-            ["@keyup"]() {
-              console.log("keyup");
+            ["@keyup.escape"]() {
               this.closeModal();
             }
           },

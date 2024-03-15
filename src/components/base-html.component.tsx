@@ -1,3 +1,6 @@
+import { loremIpsum } from "lorem-ipsum";
+import { type Notification, NotificationList } from "./notifications.component";
+
 export type HTMLProps = {
     title: string;
     children: JSX.Element | JSX.Element[];
@@ -19,7 +22,12 @@ export function BaseHtml({ title, children }: HTMLProps) {
           src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
         ></script>
       </head>
-      <body class={"min-h-screen"} x-data hx-ext="response-targets">
+      <body
+        class={"relative min-h-screen"}
+        hx-ext="response-targets"
+        x-data
+      >
+        <NotificationList />
         {children}
       </body>
     </html>

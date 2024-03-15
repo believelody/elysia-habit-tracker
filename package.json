@@ -10,7 +10,8 @@
     "@faker-js/faker": "^8.4.1",
     "bun-sqlite-migrations": "^1.0.2",
     "classnames": "^2.5.1",
-    "elysia": "latest"
+    "elysia": "latest",
+    "lorem-ipsum": "^2.0.8"
   },
   "devDependencies": {
     "bun-types": "latest"

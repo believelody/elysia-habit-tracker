@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import { generateDatesByNumberOfDays, generateDatesWithCompletion } from "../lib";
+import { Notification } from "./notifications.component";
 
 type HabitFormFieldProps = {
   fieldName: string;
@@ -105,16 +106,16 @@ export function CreateHabitForm() {
 export function EditHabitForm({
   title,
   description,
-  color,
   id,
   modalRef,
-}: Habit & { modalRef: string }) {
+}: Omit<Habit, "color"> & { modalRef: string }) {
   const editHabitErrorMessageId = "edit-habit-error";
   const targetItem = "habit-item-" + id;
   return (
     <form
       hx-put={"/api/habits/" + id}
       hx-target={`#${targetItem}`}
+      hx-swap="outerHTML"
       hx-target-4xx={`#${editHabitErrorMessageId}`}
       hx-target-5xx={`#${editHabitErrorMessageId}`}
       x-init={`
@@ -191,8 +192,8 @@ export function HabitComponent({ item }: { item: Habit }) {
       hx-target={`#${habitHistories}`}
       hx-swap="outerHTML"
     >
-      <h2 class={"text-xl font-medium"}>{item.title}</h2>
-      <p class={"text-md text-slate-400"}>{item.description}</p>
+      <h2 class={"text-xl font-medium"} safe>{item.title}</h2>
+      <p class={"text-md text-slate-400"} safe>{item.description}</p>
       <div id={habitHistories} />
       <div class={"flex gap-x-4"}>
         <button
@@ -239,9 +240,29 @@ export function HabitComponent({ item }: { item: Habit }) {
 //   );
 // }
 
-export function HabitItem({ item }: { item: Habit }) {
+export function HabitItem({
+  item,
+  triggerNotification,
+}: {
+  item: Habit;
+  triggerNotification?: Notification;
+}) {
   return (
-    <li id={`habit-item-${item.id}`}>
+    <li
+      id={`habit-item-${item.id}`}
+      x-data={`
+        {
+          triggerNotification: ${
+            triggerNotification ? JSON.stringify(triggerNotification) : null
+          },
+          init() {
+            if (this.triggerNotification) {
+              htmx.ajax('POST', '/api/notifications', { target: '#notification-list', swap: 'afterbegin', values: this.triggerNotification });
+            }
+          }
+        }
+      `}
+    >
       <HabitComponent item={item} />
     </li>
   );
