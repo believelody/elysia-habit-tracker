@@ -2,10 +2,14 @@
   "name": "elysia-habit-tracker",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@elysiajs/html": "^0.8.0",
+    "@elysiajs/static": "^0.8.1",
+    "@faker-js/faker": "^8.4.1",
+    "bun-sqlite-migrations": "^1.0.2",
+    "classnames": "^2.5.1",
     "elysia": "latest"
   },
   "devDependencies": {
