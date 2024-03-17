@@ -1,5 +1,9 @@
 import { Elysia } from "elysia";
-import { homeController } from "./home.controller";
 import { apiController } from "./api/*";
+import { homeController } from "./home.controller";
+import { loginController } from "./login.controller";
 
-export const routes = new Elysia().use(homeController).use(apiController);
+export const routes = new Elysia()
+  .use(homeController)
+  .use(loginController)
+  .use(apiController);
