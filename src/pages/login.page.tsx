@@ -15,6 +15,7 @@ export function LoginPage() {
           <span>Or</span>
           <span class={"grow bg-white h-0.5"}></span>
         </section>
+        <a href="/api/auth/login/google" class={"text-green-600 text-center hover:underline hover:underline-offset-4"}>Log in with Google</a>
       </div>
     </RootLayout>
   );
