@@ -5,6 +5,7 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
+    "@elysiajs/cookie": "^0.8.0",
     "@elysiajs/html": "^0.8.0",
     "@elysiajs/static": "^0.8.1",
     "@faker-js/faker": "^8.4.1",

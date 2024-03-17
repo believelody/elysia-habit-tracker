@@ -25,3 +25,10 @@ export function generateDatesWithCompletion(numberOfDays: number): DateWithCompl
     };
   });
 }
+
+export function fetchApi<T>(url: string | Request | URL, init?: FetchRequestInit | undefined): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const json = fetch(url, init).then((res) => res.json());
+    resolve(json);
+  });
+}

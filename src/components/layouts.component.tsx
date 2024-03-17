@@ -1,7 +1,9 @@
 import { BaseHtml, HTMLProps } from "./base-html.component";
 
-export function RootLayout({ children, title }: HTMLProps) {
+export function RootLayout({ children, title, class: className }: HTMLProps) {
     return (
-        <BaseHtml title={title}>{children}</BaseHtml>
-    )
+      <BaseHtml title={title} class={className}>
+        {children}
+      </BaseHtml>
+    );
 }

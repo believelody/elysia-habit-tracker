@@ -59,18 +59,20 @@ export const habitHistoryService = {
         if (history.completed) {
           this.create(habit.id, history.date);
         }
-      })
-    })
+      });
+    });
   },
-  findOne(id: number, date: string) {
+  findOne(id: number, date: string): HabitHistory | null {
     return db
-      .query(
+      .query<HabitHistory, { $id: number, $date: string}>(
         "select * from habits_history where habit_id=$id and date=$date"
       )
-      .get({ $id: id, $date: date }) as HabitHistory | null;
+      .get({ $id: id, $date: date });
   },
   findByHabitId(habitId: number) {
-    return db.query("select * from habits_history where habit_id=$habitId").all({ $habitId: habitId }) as HabitHistory[];
+    return db
+      .query("select * from habits_history where habit_id=$habitId")
+      .all({ $habitId: habitId }) as HabitHistory[];
   },
   create(id: number, date: string) {
     return db

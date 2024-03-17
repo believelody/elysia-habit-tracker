@@ -1,11 +1,12 @@
 import { Elysia } from "elysia";
 import { type Habit } from "../components/habits.component";
-import { HomePage } from "../pages/Home";
+import { authMiddleware } from "../middlewares/auth";
+import { HomePage } from "../pages/index.page";
 import { habitService } from "../services/habits.service";
-import { context } from "../context";
 
-export const homeController = new Elysia({ prefix: "/" }).use(context)
-  .get("/", (ctx) => {
+export const homeController = new Elysia({ prefix: "/" })
+  .use(authMiddleware)
+  .get("/", async ({ html }) => {
     const habits = habitService.findAll() as Habit[];
-    return ctx.html(<HomePage habits={habits} />);
+    return html(<HomePage habits={habits} />);
   });

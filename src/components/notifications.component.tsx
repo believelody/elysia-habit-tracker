@@ -4,8 +4,6 @@ export type Notification = {
   duration?: number;
 };
 
-export type NotificationMap = Map<string, Notification>;
-
 export function NotificationItem({ type, message, duration }: Notification) {
   let colorTypeClasses = "";
   switch (type) {

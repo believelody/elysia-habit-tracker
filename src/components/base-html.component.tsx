@@ -1,12 +1,18 @@
 import { loremIpsum } from "lorem-ipsum";
 import { type Notification, NotificationList } from "./notifications.component";
+import classNames from "classnames";
 
 export type HTMLProps = {
-    title: string;
-    children: JSX.Element | JSX.Element[];
-}
+  title: string;
+  children: JSX.Element | JSX.Element[];
+  class?: HTMLBodyElement["className"]
+};
 
-export function BaseHtml({ title, children }: HTMLProps) {
+export function BaseHtml({ title, children, class: className }: HTMLProps) {
+  const classes = classNames(
+    "bg-slate-900 text-white relative min-h-screen",
+    className
+  );
   return (
     <html lang="en">
       <head>
@@ -22,11 +28,7 @@ export function BaseHtml({ title, children }: HTMLProps) {
           src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
         ></script>
       </head>
-      <body
-        class={"relative min-h-screen"}
-        hx-ext="response-targets"
-        x-data
-      >
+      <body class={classes} hx-ext="response-targets" x-data>
         <NotificationList />
         {children}
       </body>

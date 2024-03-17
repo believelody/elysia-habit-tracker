@@ -1,16 +1,8 @@
-import classNames from "classnames";
 import {
-  generateDatesByNumberOfDays,
-  generateDatesWithCompletion,
+  generateDatesByNumberOfDays
 } from "../lib";
+import { FormField } from "./fields.component";
 import { Notification } from "./notifications.component";
-
-type HabitFormFieldProps = {
-  fieldName: string;
-  type?: string;
-  value?: string;
-  class?: string;
-};
 
 export type Habit = {
   id: number;
@@ -26,33 +18,6 @@ export type HabitHistory = {
   date: string;
   habitId: number;
 };
-
-function HabitFormField({
-  fieldName,
-  type,
-  value,
-  class: className,
-}: HabitFormFieldProps) {
-  const classes = [
-    "flex gap-x-3 items-center justify-center p-2",
-    className,
-  ].join(" ");
-  return (
-    <div class={classes}>
-      <label class={"capitalize"} for={fieldName}>
-        {fieldName}
-      </label>
-      <input
-        class={"grow rounded-md bg-neutral-800"}
-        name={fieldName}
-        id={fieldName}
-        type={type || "text"}
-        value={value || ""}
-        required
-      />
-    </div>
-  );
-}
 
 export function CreateHabitForm() {
   const targetId = "habit-list";
@@ -77,10 +42,10 @@ export function CreateHabitForm() {
       class={"flex flex-col gap-y-4 border p-8 rounded-xl max-w-3xl mx-auto"}
     >
       <div class={"flex items-center gap-x-8 w-full"}>
-        <HabitFormField class="w-2/3" fieldName="title" />
-        <HabitFormField class="w-1/3" fieldName="color" type="color" />
+        <FormField class="w-2/3" fieldName="title" />
+        <FormField class="w-1/3" fieldName="color" type="color" />
       </div>
-      <HabitFormField fieldName="description" />
+      <FormField fieldName="description" />
       <p
         id={createHabitErrorMessageId}
         class={"text-center text-red-500 p-2"}
@@ -130,8 +95,8 @@ export function EditHabitForm({
       `}
       class={"flex flex-col gap-y-4 border p-8 rounded-xl w-full mx-auto"}
     >
-      <HabitFormField fieldName="title" value={title} />
-      <HabitFormField fieldName="description" value={description} />
+      <FormField fieldName="title" value={title} />
+      <FormField fieldName="description" value={description} />
       <p class="text-red-500 p-2 text-center" id={editHabitErrorMessageId} />
       <div class={"flex items-center justify-center gap-x-3"}>
         <button

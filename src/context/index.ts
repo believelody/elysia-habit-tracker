@@ -1,7 +1,17 @@
 import { html } from "@elysiajs/html";
-import { Elysia } from "elysia";
-import { NotificationMap } from "../components/notifications.component";
+import { Elysia, t } from "elysia";
+import { db } from "../db";
+import { auth, lucia } from "../auth";
 
-const notifications: NotificationMap = new Map([]);
-
-export const context = new Elysia({ name: "@app/ctx" }).decorate("notifications", notifications).use(html());
+export const context = new Elysia({ name: "@app/ctx" })
+  .decorate("db", db)
+  .decorate("auth", auth)
+  .decorate("lucia", lucia)
+  .use(html())
+  .guard({
+    cookie: t.Cookie({
+      google_code_verifier: t.Optional(t.String()),
+      google_state: t.Optional(t.String()),
+      lucia_session: t.Optional(t.String()),
+    }),
+  });
