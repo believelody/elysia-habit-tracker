@@ -1,4 +1,4 @@
-import { ClassicButton } from "./buttons.component";
+import { PrimaryButton } from "./buttons.component";
 import { FormField } from "./fields.component";
 
 export function LoginForm() {
@@ -6,7 +6,7 @@ export function LoginForm() {
     <form hx-post="/api/auth/login">
       <FormField fieldName="name" />
       <FormField fieldName="password" type="password" />
-      <ClassicButton text="Log In" />
+      <PrimaryButton text="Log In" />
     </form>
   );
 }

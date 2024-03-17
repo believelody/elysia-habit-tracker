@@ -5,15 +5,15 @@ import {
   HabitItem,
 } from "../../components/habits.component";
 import { EditHabitModal } from "../../components/modals.component";
-import { context } from "../../context";
+import { NotificationItem, type Notification } from "../../components/notifications.component";
+import { authMiddleware } from "../../middlewares/auth.middleware";
 import {
   habitHistoryService,
   habitService,
 } from "../../services/habits.service";
-import { type Notification, NotificationItem } from "../../components/notifications.component";
 
 export const habitApiController = new Elysia({ prefix: "/habits" })
-  .use(context)
+  .use(authMiddleware)
   .post(
     "/",
     async ({ body, set, html }) => {
