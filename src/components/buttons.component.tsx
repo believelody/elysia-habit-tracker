@@ -1,37 +1,65 @@
 import classNames from "classnames";
 
-export type ButtonProps = Partial<Omit<HTMLButtonElement, "className">> & {
+export type ButtonProps = Omit<JSX.HtmlButtonTag, "class"> & {
   children?: JSX.Element | JSX.Element[];
   text?: string;
   variant?: "solid";
-  class?: HTMLButtonElement["className"];
+  class?: JSX.HtmlButtonTag["class"];
 };
 
-export function Button({ children, text, class: className }: ButtonProps) {
+export function Button({
+  children,
+  text,
+  class: className,
+  ...restProps
+}: ButtonProps) {
   const classes = classNames(
     "px-3 py-2 border border-transparent rounded",
     className
   );
-  return <button class={classes}>{text ?? children}</button>;
+  return (
+    <button {...restProps} class={classes}>
+      {text ?? children}
+    </button>
+  );
 }
 
-export function PrimaryButton({ children, text }: ButtonProps) {
+export function PrimaryButton({
+  children,
+  text,
+  class: className,
+  ...restProps
+}: ButtonProps) {
   return (
     <Button
       text={text}
       children={children}
-      class={"border-white hover:bg-white hover:text-zinc-900"}
+      class={classNames(
+        "border-white hover:bg-white hover:text-zinc-900",
+        className
+      )}
+      {...restProps}
     />
   );
 }
 
-export function SecondaryButton({ children, text }: ButtonProps) {
+export function SecondaryButton({ children, text, ...restProps }: ButtonProps) {
   return (
-    <Button text={text} children={children} class={"hover:border-white"} />
+    <Button
+      text={text}
+      children={children}
+      class={"hover:border-white"}
+      {...restProps}
+    />
   );
 }
 
-export function SuccessButton({ children, text, variant }: ButtonProps) {
+export function SuccessButton({
+  children,
+  text,
+  variant,
+  ...restProps
+}: ButtonProps) {
   return (
     <Button
       text={text}
@@ -42,11 +70,17 @@ export function SuccessButton({ children, text, variant }: ButtonProps) {
           : "hover:text-green-600"
       }
       variant={variant}
+      {...restProps}
     />
   );
 }
 
-export function DangerButton({ children, text, variant }: ButtonProps) {
+export function DangerButton({
+  children,
+  text,
+  variant,
+  ...restProps
+}: ButtonProps) {
   return (
     <Button
       text={text}
@@ -57,11 +91,17 @@ export function DangerButton({ children, text, variant }: ButtonProps) {
           : "hover:text-red-600"
       }
       variant={variant}
+      {...restProps}
     />
   );
 }
 
-export function InfoButton({ children, text, variant }: ButtonProps) {
+export function InfoButton({
+  children,
+  text,
+  variant,
+  ...restProps
+}: ButtonProps) {
   return (
     <Button
       text={text}
@@ -72,6 +112,7 @@ export function InfoButton({ children, text, variant }: ButtonProps) {
           : "hover:text-sky-600"
       }
       variant={variant}
+      {...restProps}
     />
   );
 }

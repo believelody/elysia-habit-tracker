@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { context } from "../context";
 
-export const authMiddleware = new Elysia({ name: "@app/auth" })
+export const authMiddleware = new Elysia({ name: "Middleware.AuthAndRedirect" })
   .use(context)
   .derive(async ({ cookie: { lucia_session }, set, lucia, path }) => {
     if (!lucia_session?.value) {
@@ -18,4 +18,15 @@ export const authMiddleware = new Elysia({ name: "@app/auth" })
     if (set.status !== 200 || set.status) {
       return set.redirect;
     }
+  });
+
+export const checkAuthMiddleware = new Elysia({ name: "Middleware.CheckAuth" })
+  .use(context)
+  .derive(async ({ cookie: { lucia_session }, set, lucia, path }) => {
+    if (!lucia_session?.value) {
+      set.status = "Unauthorized";
+      return;
+    }
+    const { user } = await lucia.validateSession(lucia_session.value);
+    return { isAuth: !!user };
   });

@@ -1,13 +1,9 @@
 import { Elysia } from "elysia";
-import { type Habit } from "../components/habits.component";
-import { authMiddleware } from "../middlewares/auth.middleware";
-import { HomePage } from "../pages/index.page";
-import { habitService } from "../services/habits.service";
-import { context } from "../context";
+import { checkAuthMiddleware } from "../middlewares/auth.middleware";
+import { HomePage } from "../pages/home.page";
 
-export const homeController = new Elysia({ prefix: "/", scoped: true })
-  .use(authMiddleware)
-  .get("/", async ({ html, user }) => {
-    const habits = habitService.findAll() as Habit[];
-    return html(<HomePage habits={habits} />);
+export const homeController = new Elysia({ prefix: "/" })
+  .use(checkAuthMiddleware)
+  .get("/", async ({ html, isAuth, }) => {
+    return html(<HomePage isAuth={isAuth} />);
   });

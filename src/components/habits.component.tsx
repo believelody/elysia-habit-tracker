@@ -1,6 +1,7 @@
 import {
   generateDatesByNumberOfDays
 } from "../lib";
+import { DangerButton, InfoButton, PrimaryButton, SecondaryButton } from "./buttons.component";
 import { FormField } from "./fields.component";
 import { Notification } from "./notifications.component";
 
@@ -50,22 +51,17 @@ export function CreateHabitForm() {
         id={createHabitErrorMessageId}
         class={"text-center text-red-500 p-2"}
       />
-      <div class={"flex items-center justify-center gap-x-3"}>
-        <button
-          class="hover:text-red-700"
+      <div class={"flex items-center justify-center gap-x-8"}>
+        <SecondaryButton
           x-on:click={`
             $refs["${createHabitFormRef}"].reset();
             document.getElementById("${createHabitErrorMessageId}").textContent = "";
             showForm = false;
           `}
+          text="Cancel"
           type="button"
-        >
-          Cancel
-        </button>
-        <span>.</span>
-        <button class="hover:text-sky-700" type="submit">
-          Submit
-        </button>
+        />
+        <PrimaryButton text="Submit" class="hover:text-sky-700" type="submit" />
       </div>
     </form>
   );
@@ -98,18 +94,13 @@ export function EditHabitForm({
       <FormField fieldName="title" value={title} />
       <FormField fieldName="description" value={description} />
       <p class="text-red-500 p-2 text-center" id={editHabitErrorMessageId} />
-      <div class={"flex items-center justify-center gap-x-3"}>
-        <button
-          class="hover:text-red-700"
+      <div class={"flex items-center justify-center gap-x-8"}>
+        <SecondaryButton
+          text="Cancel"
           x-on:click={`$refs["${modalRef}"].remove();`}
           type="button"
-        >
-          Cancel
-        </button>
-        <span class={"p-0.5 bg-white rounded-full"} />
-        <button class="hover:text-sky-700" type="submit">
-          Submit
-        </button>
+        />
+        <PrimaryButton class="hover:text-sky-700" type="submit" text="Submit" />
       </div>
     </form>
   );
@@ -117,7 +108,7 @@ export function EditHabitForm({
 
 export function CreateHabitButton() {
   return (
-    <button
+    <PrimaryButton
       class={
         "p-4 text-center border rounded-xl hover:bg-slate-300 hover:text-slate-700 w-full md:w-3/4 mx-auto text-3xl flex gap-x-4 items-center justify-center"
       }
@@ -131,7 +122,7 @@ export function CreateHabitButton() {
       >
         +
       </span>
-    </button>
+    </PrimaryButton>
   );
 }
 
@@ -168,10 +159,12 @@ export function HabitComponent({ item }: { item: Habit }) {
       </p>
       <div id={habitHistories} />
       <div class={"flex gap-x-4"}>
-        <button
+        <InfoButton
           class={
             "px-3 py-2 rounded border text-sky-600 hover:bg-sky-600 hover:text-white"
           }
+          text="Edit"
+          variant="solid"
           hx-get={`/api/habits/${item.id}/edit`}
           hx-target="body"
           hx-swap="afterbegin"
@@ -180,13 +173,13 @@ export function HabitComponent({ item }: { item: Habit }) {
             description: item.description,
             color: item.color,
           })}
-        >
-          Edit
-        </button>
-        <button
+        />
+        <DangerButton
           class={
             "px-3 py-2 rounded border text-red-600 hover:bg-red-600 hover:text-white"
           }
+          text="Delete"
+          variant="solid"
           hx-delete={`/api/habits/${item.id}`}
           hx-swap="afterbegin"
           hx-target="#notification-list"
@@ -198,9 +191,7 @@ export function HabitComponent({ item }: { item: Habit }) {
               }
             })
           `}
-        >
-          Delete
-        </button>
+        />
       </div>
     </section>
   );
