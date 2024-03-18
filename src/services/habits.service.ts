@@ -24,11 +24,35 @@ export const habitService = {
       .get({ $id: id });
   },
   findManyByUserId(userId: string) {
-    return db
-      .query<Habit, { $userId: string }>(
-        "select * from habits where user_id=$userId"
+    type QueryResult = {
+      id: Habit["id"];
+      description: Habit["description"];
+      title: Habit["title"];
+      color: Habit["color"];
+      userId: Habit["userId"];
+      date: HabitHistory["date"];
+    };
+    const results = db
+      .query<QueryResult, { $userId: string }>(
+        "select habits.*, habits_history.date from habits inner join habits_history on habits.id = habits_history.habit_id where habits.user_id=$userId"
       )
       .all({ $userId: userId });
+    return results.reduce<Habit[]>((acc, cur) => {
+      const index = acc.findIndex((item) => item.id === cur.id);
+      if (index < 0) {
+        acc.push({
+          id: cur.id,
+          title: cur.title,
+          description: cur.description,
+          color: cur.color,
+          userId: cur.userId,
+          histories: [{ date: cur.date, habitId: cur.id }],
+        });
+      } else {
+        acc[index].histories?.push({ date: cur.date, habitId: cur.id });
+      }
+      return acc;
+    }, []);
   },
   create({ title, description, color, userId }: CreateHabit) {
     return db
@@ -85,7 +109,7 @@ export const habitHistoryService = {
       const histories = generateDatesWithCompletion(90);
       habit.histories = this.createBulk(
         habit.id,
-        histories.filter((history) => history.completed).map(({date}) => date)
+        histories.filter((history) => history.completed).map(({ date }) => date)
       );
     });
     return habits;

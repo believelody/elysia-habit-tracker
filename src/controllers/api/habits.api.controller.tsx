@@ -63,7 +63,6 @@ export const habitApiController = new Elysia({
   )
   .post("/samples", ({ user, html }) => {
     const habits = habitHistoryService.seedHistory(user.id);
-    console.log(JSON.stringify(habits, null, 2));
     return html(<Habits habits={habits} />);
   })
   .group(
@@ -174,9 +173,6 @@ export const habitApiController = new Elysia({
           };
           if (habitsLength && habitsLength["count(*)"] === 0) {
             ctx.set.headers["HX-Trigger"] = "load-habits";
-            // ctx.set.headers["HX-Reswap"] = "outerHTML";
-            // return <Habits habits={[]} />;
-            // return (ctx.set.headers["HX-Redirect"] = "/habits");
           }
           return ctx.html(<NotificationItem {...notification} />);
         })
