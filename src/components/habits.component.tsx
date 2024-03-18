@@ -1,7 +1,10 @@
+import { generateDatesByNumberOfDays } from "../lib";
 import {
-  generateDatesByNumberOfDays
-} from "../lib";
-import { DangerButton, InfoButton, PrimaryButton, SecondaryButton } from "./buttons.component";
+  DangerButton,
+  InfoButton,
+  PrimaryButton,
+  SecondaryButton,
+} from "./buttons.component";
 import { FormField } from "./fields.component";
 import { Notification } from "./notifications.component";
 
@@ -11,6 +14,7 @@ export type Habit = {
   description: string;
   color: string;
   histories?: HabitHistory[];
+  userId: string;
 };
 
 export type HabitsProps = { habits: Habit[] };
@@ -129,11 +133,11 @@ export function CreateHabitButton() {
 export function CreateHabitComponent() {
   return (
     <div x-data="{ showForm: false }">
-      <div x-show="showForm">
-        <CreateHabitForm />
-      </div>
       <div x-show="!showForm">
         <CreateHabitButton />
+      </div>
+      <div x-show="showForm">
+        <CreateHabitForm />
       </div>
     </div>
   );
@@ -146,10 +150,10 @@ export function HabitComponent({ item }: { item: Habit }) {
       class={
         "rounded-md border border-slate-300 p-5 flex flex-col gap-y-4 max-w-xl"
       }
-      hx-get={`/api/habits/${item.id}/histories`}
-      hx-trigger="load"
-      hx-target={`#${habitHistories}`}
-      hx-swap="outerHTML"
+      // hx-get={`/api/habits/${item.id}/histories`}
+      // hx-trigger="load"
+      // hx-target={`#${habitHistories}`}
+      // hx-swap="outerHTML"
     >
       <h2 class={"text-xl font-medium"} safe>
         {item.title}
@@ -157,7 +161,8 @@ export function HabitComponent({ item }: { item: Habit }) {
       <p class={"text-md text-slate-400"} safe>
         {item.description}
       </p>
-      <div id={habitHistories} />
+      {/* <div id={habitHistories} /> */}
+      <HabitHistoryList habit={item} />
       <div class={"flex gap-x-4"}>
         <InfoButton
           class={
@@ -226,14 +231,37 @@ export function HabitItem({
 }
 
 export function Habits({ habits }: HabitsProps) {
+  const className = habits?.length
+    ? "grid grid-cols-1 md:grid-cols-2 gap-5 p-4 mx-auto border"
+    : "";
   return (
     <ul
       id={"habit-list"}
-      class={"grid grid-cols-1 md:grid-cols-2 gap-5 p-4 mx-auto border"}
+      class={className}
+      hx-get="/api/habits"
+      hx-trigger="load-habits from:body"
+      hx-target="this"
+      hx-swap="outerHTML"
     >
-      {habits.map((habit) => (
-        <HabitItem item={habit} />
-      ))}
+      {habits?.length ? (
+        habits.map((habit) => <HabitItem item={habit} />)
+      ) : (
+        <li class={"p-2 w-full md:w-2/3 xl:w-1/2 mx-auto"}>
+          <p class={"py-4 text-xl"}>
+            You don't have any habits yet. Click to "Add Habit" button above to
+            create one
+          </p>
+          <p class={"text-lg"}>
+            <span>Do you want some samples ?</span>
+            <SecondaryButton
+              hx-post="/api/habits/samples"
+              hx-target="#habit-list"
+              hx-swap="outerHTML"
+              text="Click here"
+            />
+          </p>
+        </li>
+      )}
     </ul>
   );
 }
@@ -262,10 +290,8 @@ export function HabitHistoryItem({
 
 export function HabitHistoryList({
   habit,
-  histories,
 }: {
   habit: Habit;
-  histories: HabitHistory[];
 }) {
   const dates = generateDatesByNumberOfDays(90);
   return (
@@ -276,7 +302,7 @@ export function HabitHistoryList({
           <HabitHistoryItem
             habit={habit}
             date={formatedDate}
-            completed={histories.some(
+            completed={!!habit.histories?.some(
               (history) => history.date === formatedDate
             )}
           />

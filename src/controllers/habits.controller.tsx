@@ -6,6 +6,6 @@ import { habitService } from "../services/habits.service";
 export const habitsController = new Elysia({ prefix: "/habits", scoped: true })
   .use(authMiddleware)
   .get("/", async ({ html, user }) => {
-    const habits = habitService.findAll();
+    const habits = habitService.findManyByUserId(user.id);
     return html(<HabitsPage habits={habits} />);
   });

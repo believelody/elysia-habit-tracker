@@ -6,24 +6,49 @@ export type CreateHabit = Omit<Habit, "id">;
 export type UpdateHabit = Partial<CreateHabit>;
 
 export const habitService = {
-  findAll() {
-    return db.query("select * from habits order by id desc").all() as Habit[];
+  count(userId: string) {
+    return db
+      .query<{ "count(*)": number } | null, { $userId: string }>(
+        "select count(*) from habits where user_id=$userId"
+      )
+      .get({ $userId: userId });
+  },
+  seed(userId: string) {
+    return db
+      .query<Habit, { $userId: string }>(querySeed)
+      .all({ $userId: userId });
   },
   findById(id: number) {
     return db
-      .query("select * from habits where id=$id")
-      .get({ $id: id }) as Habit | null;
+      .query<Habit | null, { $id: number }>("select * from habits where id=$id")
+      .get({ $id: id });
   },
-  create({ title, description, color }: CreateHabit) {
+  findManyByUserId(userId: string) {
     return db
-      .query(
-        "insert into habits (title, description, color) values ($title, $description, $color) returning *"
+      .query<Habit, { $userId: string }>(
+        "select * from habits where user_id=$userId"
+      )
+      .all({ $userId: userId });
+  },
+  create({ title, description, color, userId }: CreateHabit) {
+    return db
+      .query<
+        Habit | null,
+        {
+          $title: string;
+          $description: string;
+          $color: string;
+          $userId: string;
+        }
+      >(
+        "insert into habits (title, description, color, user_id) values ($title, $description, $color, $userId) returning *"
       )
       .get({
         $title: title,
         $description: description,
         $color: color,
-      }) as Habit | null;
+        $userId: userId,
+      });
   },
   updateById(id: number, body: UpdateHabit) {
     const columnsToUpdate = Object.keys(body)
@@ -34,7 +59,6 @@ export const habitService = {
       (acc, [key, value]) => ({ ...acc, [`$${key}`]: value }),
       {}
     );
-
     // const existingHabit = this.findById(id);
 
     // if (!existingHabit) {
@@ -42,48 +66,129 @@ export const habitService = {
     // }
 
     return db
-      .query(`update habits set ${columnsToUpdate} where id=$id returning *`)
-      .get({ $id: id, ...tableColumns }) as Habit | null;
+      .query<Habit | null, typeof tableColumns & { $id: number }>(
+        `update habits set ${columnsToUpdate} where id=$id returning *`
+      )
+      .get({ $id: id, ...tableColumns });
   },
   deleteById(id: number) {
-    return db.query("delete from habits where id=$id").run({ $id: id });
+    return db
+      .query<void, { $id: number }>("delete from habits where id=$id")
+      .run({ $id: id });
   },
 };
 
 export const habitHistoryService = {
-  seedHabits() {
-    const habits = habitService.findAll();
-    habits.forEach((habit) => {
+  seedHistory(userId: string) {
+    const habits = habitService.seed(userId);
+    habits?.forEach((habit) => {
       const histories = generateDatesWithCompletion(90);
-      histories.forEach((history) => {
-        if (history.completed) {
-          this.create(habit.id, history.date);
-        }
-      });
+      habit.histories = this.createBulk(
+        habit.id,
+        histories.filter((history) => history.completed).map(({date}) => date)
+      );
     });
+    return habits;
   },
   findOne(id: number, date: string): HabitHistory | null {
     return db
-      .query<HabitHistory, { $id: number, $date: string}>(
+      .query<HabitHistory, { $id: number; $date: string }>(
         "select * from habits_history where habit_id=$id and date=$date"
       )
       .get({ $id: id, $date: date });
   },
   findByHabitId(habitId: number) {
     return db
-      .query("select * from habits_history where habit_id=$habitId")
-      .all({ $habitId: habitId }) as HabitHistory[];
+      .query<HabitHistory, { $habitId: number }>(
+        "select * from habits_history where habit_id=$habitId"
+      )
+      .all({ $habitId: habitId });
   },
   create(id: number, date: string) {
     return db
-      .query(
+      .query<HabitHistory | null, { $id: number; $date: string }>(
         "insert into habits_history (habit_id, date) values ($id, $date) returning *"
       )
-      .get({ $id: id, $date: date }) as HabitHistory | null;
+      .get({ $id: id, $date: date });
+  },
+  createBulk(id: number, dates: string[]) {
+    return db
+      .query<HabitHistory, []>(
+        `insert into habits_history (habit_id, date) values ${dates.map(
+          (date) => `(${id}, "${date}")`
+        )} returning *`
+      )
+      .all();
   },
   delete(id: number, date: string) {
     return db
-      .query("delete from habits_history where habit_id=$id and date=$date")
+      .query<void, { $id: number; $date: string }>(
+        "delete from habits_history where habit_id=$id and date=$date"
+      )
       .run({ $id: id, $date: date });
   },
 };
+
+const querySeed = `
+    INSERT INTO habits (title, description, color, user_id)
+    VALUES (
+        "Meditation",
+        "Practice mindfulness for 10 minutes",
+        "#F7D354",
+        $userId
+    ),
+    (
+        "Exercise",
+        "Go for a 30-minute walk or run",
+        "#9B59B6",
+        $userId
+    ),
+    (
+        "Journaling",
+        "Write down your thoughts and feelings",
+        "#F0E68C",
+        $userId
+    ),
+    (
+        "Reading",
+        "Read for 30 minutes before bed",
+        "#66B3FF",
+        $userId
+    ),
+    (
+        "Healthy eating",
+        "Eat more fruits, vegetables, and whole grains",
+        "#90EE90",
+        $userId
+    ),
+    (
+        "Learning a new skill",
+        "Spend 30 minutes learning something new",
+        "#E0627C",
+        $userId
+    ),
+    (
+        "Gratitude practice",
+        "Write down 3 things you're grateful for",
+        "#FFD700",
+        $userId
+    ),
+    (
+        "Drinking water",
+        "Drink 8 glasses of water per day",
+        "#C0C0C0",
+        $userId
+    ),
+    (
+        "Tidying up",
+        "Spend 15 minutes decluttering your space",
+        "#FFA500",
+        $userId
+    ),
+    (
+        "Getting enough sleep",
+        "Aim for 7-8 hours of sleep per night",
+        "#3299D8",
+        $userId
+    ) RETURNING *;
+`;

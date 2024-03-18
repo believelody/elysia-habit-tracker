@@ -14,7 +14,9 @@ export const authMiddleware = new Elysia({ name: "Middleware.AuthAndRedirect" })
       return (set.redirect = "/login");
     }
     return { user };
-  }).onBeforeHandle(({ set }) => {
+  })
+  .onBeforeHandle(({ set, path }) => {
+    console.log({ path });
     if (set.status !== 200 || set.status) {
       return set.redirect;
     }

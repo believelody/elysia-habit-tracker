@@ -5,7 +5,7 @@ export function LoginPage() {
   return (
     <RootLayout
       title="Please login or create an account"
-      class="flex flex-col items-center justify-center p-2"
+      class="flex flex-col items-center justify-center p-2 border"
     >
       <div class={"mx-auto w-full md:w-2/3 xl:w-1/2 gap-y-4 flex flex-col rounded border p-4"}>
         <h2 class={"text-2xl text-center"}>Log in</h2>
