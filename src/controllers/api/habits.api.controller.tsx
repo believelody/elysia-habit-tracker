@@ -18,7 +18,7 @@ import {
 
 export const habitApiController = new Elysia({
   prefix: "/habits",
-  // scoped: true,
+  scoped: true
 })
   .use(authMiddleware)
   .get("/", ({ html, user }) => {

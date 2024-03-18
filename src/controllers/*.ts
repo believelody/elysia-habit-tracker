@@ -6,6 +6,6 @@ import { homeController } from "./home.controller";
 
 export const routes = new Elysia()
   .use(homeController)
-  .use(habitsController)
   .use(loginController)
-  .use(apiController);
+  .use(apiController)
+  .use(habitsController);
