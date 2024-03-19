@@ -1,3 +1,5 @@
+import { SecondaryButton } from "../components/buttons.component";
+import { Divider } from "../components/divider.component";
 import { Headings, SubTitle, Title } from "../components/headings.component";
 import { RootLayout } from "../components/layouts.component";
 
@@ -49,21 +51,14 @@ export function HomePage({ isAuth }: { isAuth: boolean }) {
               >
                 Let me check my habits
               </a>
-              <section class={"flex items-center gap-x-2"}>
-                <span class={"grow bg-white h-0.5"}></span>
-                <span>Or</span>
-                <span class={"grow bg-white h-0.5"}></span>
-              </section>
-              <a
-                class={"hover:underline hover:underline-offset-4"}
-                href="/api/auth/logout"
-              >
-                Log out
-              </a>
+              <Divider text="Or" />
+              <SecondaryButton hx-post="/api/auth/logout" text="Log out" />
             </div>
           ) : (
             <a
-              class={"hover:underline hover:underline-offset-4 p-2 border rounded-md"}
+              class={
+                "hover:underline hover:underline-offset-4 p-2 border rounded-md"
+              }
               href="/login"
             >
               Already an account ? Log in

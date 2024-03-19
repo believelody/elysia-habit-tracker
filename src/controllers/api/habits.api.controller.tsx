@@ -1,16 +1,15 @@
 import { Elysia, t } from "elysia";
 import {
   HabitHistoryItem,
-  HabitHistoryList,
   HabitItem,
-  Habits,
+  Habits
 } from "../../components/habits.component";
 import { EditHabitModal } from "../../components/modals.component";
 import {
   NotificationItem,
   type Notification,
 } from "../../components/notifications.component";
-import { authMiddleware } from "../../middlewares/auth.middleware";
+import { sessionUserMiddleware } from "../../middlewares/auth.middleware";
 import {
   habitHistoryService,
   habitService,
@@ -18,9 +17,8 @@ import {
 
 export const habitApiController = new Elysia({
   prefix: "/habits",
-  scoped: true
 })
-  .use(authMiddleware)
+  .use(sessionUserMiddleware)
   .get("/", ({ html, user }) => {
     const habits = habitService.findManyByUserId(user.id);
     return html(<Habits habits={habits} />);
@@ -78,7 +76,7 @@ export const habitApiController = new Elysia({
           "/edit",
           (ctx) => {
             return ctx.html(
-              <EditHabitModal habit={{ ...ctx.query, id: ctx.params.id }} />
+              <EditHabitModal habit={{ ...ctx.query, id: ctx.params.id, userId: ctx.user.id }} />
             );
           },
           {
@@ -89,18 +87,6 @@ export const habitApiController = new Elysia({
             }),
           }
         )
-        .get("/histories", (ctx) => {
-          const { id } = ctx.params;
-          const existingHabit = habitService.findById(id);
-          if (!existingHabit) {
-            ctx.set.status = "Internal Server Error";
-            return;
-          }
-          const histories = habitHistoryService.findByHabitId(id);
-          return ctx.html(
-            <HabitHistoryList habit={existingHabit} histories={histories} />
-          );
-        })
         .post(
           "/toggle/:date",
           (ctx) => {

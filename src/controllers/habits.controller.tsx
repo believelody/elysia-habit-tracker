@@ -1,11 +1,22 @@
 import { Elysia } from "elysia";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { sessionUserMiddleware } from "../middlewares/auth.middleware";
 import { HabitsPage } from "../pages/habits.page";
 import { habitService } from "../services/habits.service";
 
 export const habitsController = new Elysia({ prefix: "/habits" })
-  .use(authMiddleware)
-  .get("/", async ({ html, user }) => {
-    const habits = habitService.findManyByUserId(user.id);
-    return html(<HabitsPage habits={habits} />);
-  });
+  .use(sessionUserMiddleware)
+  .guard(
+    {
+      beforeHandle({ user, set }) {
+        if (!user) {
+          set.status = "Unauthorized";
+          return (set.redirect = "/login");
+        }
+      },
+    },
+    (app) =>
+      app.get("/", async ({ html, user }) => {
+        const habits = habitService.findManyByUserId(user.id);
+        return html(<HabitsPage habits={habits} />);
+      })
+  );

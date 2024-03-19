@@ -83,7 +83,6 @@ const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
       const sessionCookie = lucia.createSessionCookie(session.id);
       lucia_session.value = sessionCookie.value;
       lucia_session.set(sessionCookie.attributes);
-      console.log("in google callback : ", lucia_session.value);
       return (set.redirect = "/habits");
     },
     {
