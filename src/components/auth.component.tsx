@@ -14,8 +14,14 @@ export function LoginForm() {
 }
 
 export function RegisterForm() {
+  const errorRegisterId = "error-register";
   return (
-    <form hx-post="/api/auth/register">
+    <form
+      hx-post="/api/auth/register"
+      hx-target-500={`#${errorRegisterId}`}
+      hx-target-4xx={`#${errorRegisterId}`}
+    >
+      <p class="text-red-500 text-center text-lg" id={errorRegisterId} />
       <FormField fieldName="name" />
       <FormField fieldName="email" type="email" />
       <FormField fieldName="password" type="password" />
