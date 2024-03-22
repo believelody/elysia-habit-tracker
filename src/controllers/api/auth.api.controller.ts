@@ -99,7 +99,7 @@ export const authApiController = new Elysia({ prefix: "/auth" })
     app
       .post(
         "/",
-        async ({ body, set }) => {
+        async ({ body, set, cookie: { lucia_session }, lucia }) => {
           const { email, password } = body;
           const user = userService.getByEmail(email);
           if (!user) {
@@ -119,7 +119,11 @@ export const authApiController = new Elysia({ prefix: "/auth" })
             set.status = "Bad Request";
             return "Invalid password or password";
           }
-          return set.redirect = "/";
+          const session = await lucia.createSession(user.id, {});
+          const sessionCookie = lucia.createSessionCookie(session.id);
+          lucia_session.value = sessionCookie.value;
+          lucia_session.set(sessionCookie.attributes);
+          return (set.headers["HX-Redirect"] = "/");
         },
         {
           body: t.Object({
@@ -130,25 +134,39 @@ export const authApiController = new Elysia({ prefix: "/auth" })
       )
       .use(googleAuthApiController)
   )
-  .post("/register", async ({ set, cookie: { lucia_session }, body, lucia }) => {
-    const existingUser = userService.getByEmail(body.email);
-    if (existingUser) {
-      set.status = "Conflict";
-      return "User already exist"
+  .post(
+    "/register",
+    async ({
+      set,
+      cookie: { lucia_session },
+      body: { email, password, name },
+      lucia,
+    }) => {
+      const existingUser = userService.getByEmail(email);
+      if (existingUser) {
+        set.status = "Conflict";
+        return "User already exist";
+      }
+      const hashedPassword = await Bun.password.hash(password);
+      const newUser = userService.create<"basic">({
+        name,
+        email,
+        password: hashedPassword,
+      });
+      const session = await lucia.createSession(newUser.id, {});
+      const sessionCookie = lucia.createSessionCookie(session.id);
+      lucia_session.value = sessionCookie.value;
+      lucia_session.set(sessionCookie.attributes);
+      return (set.headers["HX-Redirect"] = "/habits");
+    },
+    {
+      body: t.Object({
+        name: t.String(),
+        email: t.String({ format: "email" }),
+        password: t.String(),
+      }),
     }
-    const newUser = userService.create<"basic">(body);
-    const session = await lucia.createSession(newUser.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    lucia_session.value = sessionCookie.value;
-    lucia_session.set(sessionCookie.attributes);
-    return (set.headers["HX-Redirect"] = "/habits");
-  }, {
-    body: t.Object({
-      name: t.String(),
-      email: t.String({ format: "email" }),
-      password: t.String(),
-    })
-  })
+  )
   .post("/logout", async ({ cookie: { lucia_session }, lucia, set }) => {
     if (!lucia_session?.value) {
       set.status = "Unauthorized";
