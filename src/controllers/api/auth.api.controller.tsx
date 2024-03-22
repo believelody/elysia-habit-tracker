@@ -5,6 +5,7 @@ import { GoogleProfile } from "../../auth";
 import { context } from "../../context";
 import { fetchApi } from "../../lib";
 import { userService } from "../../services/user.service";
+import { HomePage } from "../../pages/home.page";
 
 const googleAuthApiController = new Elysia({ prefix: "/google" })
   .use(context)
@@ -141,10 +142,13 @@ export const authApiController = new Elysia({ prefix: "/auth" })
       cookie: { lucia_session },
       body: { email, password, name },
       lucia,
+      html,
+      headers
     }) => {
       const existingUser = userService.getByEmail(email);
       if (existingUser) {
         set.status = "Conflict";
+        set.headers["HX-Reswap"] = "innerHTML";
         return "User already exist";
       }
       const hashedPassword = await Bun.password.hash(password);
@@ -157,7 +161,8 @@ export const authApiController = new Elysia({ prefix: "/auth" })
       const sessionCookie = lucia.createSessionCookie(session.id);
       lucia_session.value = sessionCookie.value;
       lucia_session.set(sessionCookie.attributes);
-      return (set.headers["HX-Redirect"] = "/habits");
+      set.headers["HX-Trigger"] = "registerSuccessNotification";
+      return html(<HomePage isHTMX={Boolean(headers["hx-request"])} isAuth />);
     },
     {
       body: t.Object({

@@ -1,15 +1,20 @@
+import { PageContext } from "../components/base-html.component";
 import { SecondaryButton } from "../components/buttons.component";
 import { Divider } from "../components/divider.component";
 import { Headings, SubTitle, Title } from "../components/headings.component";
 import { RootLayout } from "../components/layouts.component";
 
-export function HomePage({ isAuth }: { isAuth: boolean }) {
+export function HomePage({
+  isAuth,
+  isHTMX,
+}: PageContext<{ isAuth?: boolean }>) {
   const title = "Unleash Your Potential";
   const subTitle = "Build Lasting Habits That Stick";
   return (
     <RootLayout
       title={[title, subTitle].join(" : ")}
       class="flex flex-col gap-x-8"
+      isHTMX={isHTMX}
     >
       <Headings>
         <Title text={title} />

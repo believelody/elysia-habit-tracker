@@ -1,19 +1,28 @@
-import { loremIpsum } from "lorem-ipsum";
-import { type Notification, NotificationList } from "./notifications.component";
 import classNames from "classnames";
+import { NotificationList } from "./notifications.component";
 
 export type HTMLProps = {
   title: string;
   children: JSX.Element | JSX.Element[];
-  class?: HTMLBodyElement["className"]
+  class?: HTMLBodyElement["className"];
+  isHTMX?: boolean;
 };
 
-export function BaseHtml({ title, children, class: className }: HTMLProps) {
+export type PageContext<T> = T & Pick<HTMLProps, "isHTMX">;
+
+export function BaseHtml({
+  title,
+  children,
+  isHTMX,
+  class: className,
+}: HTMLProps) {
   const classes = classNames(
     "bg-slate-900 text-white relative min-h-screen",
     className
   );
-  return (
+  return isHTMX ? (
+    <>{children}</>
+  ) : (
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
@@ -29,6 +38,13 @@ export function BaseHtml({ title, children, class: className }: HTMLProps) {
         ></script>
       </head>
       <body class={classes} hx-ext="response-targets" x-data>
+        <div
+          hx-get="/api/notifications/register/success"
+          hx-trigger="registerSuccessNotification from:body"
+          hx-target="#notification-list"
+          hx-swap="afterbegin"
+          class={"hidden"}
+        />
         <NotificationList />
         {children}
       </body>
