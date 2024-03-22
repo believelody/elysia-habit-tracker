@@ -4,7 +4,7 @@ import { BunSQLiteAdapter } from "@lucia-auth/adapter-sqlite";
 import { Lucia } from "lucia";
 import { db } from "../db";
 
-export type GoogleUser = {
+export type GoogleProfile = {
   id: string;
   name: string;
   given_name: string;

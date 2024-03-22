@@ -1,11 +1,10 @@
 import { generateCodeVerifier, generateState } from "arctic";
 import { Elysia, t } from "elysia";
+import { Argon2id } from "oslo/password";
+import { GoogleProfile } from "../../auth";
 import { context } from "../../context";
-import { GoogleUser } from "../../auth";
 import { fetchApi } from "../../lib";
 import { userService } from "../../services/user.service";
-import { generateId } from "lucia";
-import { Argon2id } from "oslo/password";
 
 const googleAuthApiController = new Elysia({ prefix: "/google" })
   .use(context)
@@ -58,7 +57,7 @@ const googleAuthApiController = new Elysia({ prefix: "/google" })
         code,
         codeVerifier
       );
-      const googleUserResult = await fetchApi<GoogleUser>(
+      const googleUserResult = await fetchApi<GoogleProfile>(
         "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
         {
           headers: {
@@ -71,11 +70,10 @@ const googleAuthApiController = new Elysia({ prefix: "/google" })
 
         return (
           existingUser ??
-          userService.create({
+          userService.create<"google">({
             google_id: googleUserResult.id,
             name: googleUserResult.name,
-            id: generateId(15),
-            authType: "google",
+            // id: generateId(15),
           })
         );
       }
@@ -108,10 +106,11 @@ export const authApiController = new Elysia({ prefix: "/auth" })
             set.status = "Bad Request";
             return "Invalid email or password";
           }
-          if (!user.password) {
-            set.status = "Internal Server Error";
-            return;
-          }
+          // Ensure that user is BasicUser
+          // if (!user.password) {
+          //   set.status = "Internal Server Error";
+          //   return;
+          // }
           const validPassword = await new Argon2id().verify(
             user.password,
             password
@@ -131,6 +130,25 @@ export const authApiController = new Elysia({ prefix: "/auth" })
       )
       .use(googleAuthApiController)
   )
+  .post("/register", async ({ set, cookie: { lucia_session }, body, lucia }) => {
+    const existingUser = userService.getByEmail(body.email);
+    if (existingUser) {
+      set.status = "Conflict";
+      return "User already exist"
+    }
+    const newUser = userService.create<"basic">(body);
+    const session = await lucia.createSession(newUser.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+    lucia_session.value = sessionCookie.value;
+    lucia_session.set(sessionCookie.attributes);
+    return (set.headers["HX-Redirect"] = "/habits");
+  }, {
+    body: t.Object({
+      name: t.String(),
+      email: t.String({ format: "email" }),
+      password: t.String(),
+    })
+  })
   .post("/logout", async ({ cookie: { lucia_session }, lucia, set }) => {
     if (!lucia_session?.value) {
       set.status = "Unauthorized";

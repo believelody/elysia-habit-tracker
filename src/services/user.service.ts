@@ -1,45 +1,52 @@
-import { NotFoundError, InternalServerError } from "elysia";
+import { InternalServerError, NotFoundError } from "elysia";
 import { db } from "../db";
 import type {
-  User,
-  UpdateUserData,
-  UpdateUserDB,
-  CreateUserData,
+  BasicUser,
   CreateUserDB,
+  CreateUserData,
+  GoogleUser,
+  UpdateUserDB,
+  UpdateUserData,
+  User
 } from "../models/user.model";
+import { generateId } from "lucia";
 
 export const userService = {
-  getAll(): User[] {
-    return db.query<User, null>("SELECT * FROM users").all(null);
+  getAll<TAuhType>(): User<TAuhType>[] {
+    return db.query<User<TAuhType>, null>("SELECT * FROM users").all(null);
   },
 
-  getById(userId: string): User | null | never {
-    const result: User | null = db
-      .query<User, string>("SELECT * FROM users WHERE id = ?")
+  getById<TAuhType>(userId: string): User<TAuhType> | null | never {
+    const result: User<TAuhType> | null = db
+      .query<User<TAuhType>, string>("SELECT * FROM users WHERE id = ?")
       .get(userId);
 
     return result;
   },
 
-  getByGoogleId(googleId: string): User | null | never {
-    const result: User | null = db
-      .query<User, string>("SELECT * FROM users WHERE google_id = ? LIMIT 1")
+  getByGoogleId(googleId: string): GoogleUser | null | never {
+    const result: GoogleUser | null = db
+      .query<GoogleUser, string>(
+        "SELECT * FROM users WHERE google_id = ? LIMIT 1"
+      )
       .get(googleId);
 
     return result;
   },
 
-  getByEmail(email: string): User | null | never {
-    const result: User | null = db
-      .query<User, string>("SELECT * FROM users WHERE email = ? LIMIT 1")
+  getByEmail(email: string): BasicUser | null | never {
+    const result: BasicUser | null = db
+      .query<BasicUser, string>("SELECT * FROM users WHERE email = ? LIMIT 1")
       .get(email);
 
     return result;
   },
 
-  deleteById(userId: string): void | never {
-    const result: User | null = db
-      .query<User, string>("DELETE FROM users WHERE id = ? RETURNING *")
+  deleteById<TAuthType>(userId: string): void | never {
+    const result: User<TAuthType> | null = db
+      .query<User<TAuthType>, string>(
+        "DELETE FROM users WHERE id = ? RETURNING *"
+      )
       .get(userId);
     console.log("In delete by id: ", result);
     if (!result) {
@@ -49,18 +56,21 @@ export const userService = {
     return;
   },
 
-  updateById(userId: string, updateData: UpdateUserData): User | never {
+  updateById<TAuthType>(
+    userId: string,
+    updateData: UpdateUserData<TAuthType>
+  ): User<TAuthType> | never {
     const user = this.getById(userId);
     if (!user) {
       throw new NotFoundError(`User does not exist`);
     }
-    const updateObj: UpdateUserDB = {
+    const updateObj: UpdateUserDB<TAuthType> = {
       $name: updateData.name ?? user.name,
       $id: user.id,
     };
 
-    const result: User | null = db
-      .query<User, Record<string, string>>(
+    const result: User<TAuthType> | null = db
+      .query<User<TAuthType>, Record<string, string>>(
         `UPDATE users 
           SET name = $name
           WHERE id = $id`
@@ -74,21 +84,23 @@ export const userService = {
     return result;
   },
 
-  create(createData: CreateUserData): User | never {
-    const createObj: CreateUserDB = {
-      $name: createData.name,
-      $id: createData.id,
-      $google_id: createData.google_id,
-      $email: createData.email,
-      $password: createData.password,
-      $authType: createData.authType,
-    };
+  create<TAuthType>(
+    createData: CreateUserData<TAuthType>
+  ): User<TAuthType> | never {
+    const id = generateId(15);
+    const createObj = Object.entries({ id, ...createData}).reduce((acc, [key, value]) => {
+      acc = {
+        ...acc,
+        [`$${key}`]: value,
+      };
+      return acc;
+    }, <CreateUserDB<TAuthType>>{});
 
-    const result: User | null = db
-      .query<User, Record<string, string>>(
+    const result: User<TAuthType> | null = db
+      .query<User<TAuthType>, Record<string, string>>(
         `INSERT INTO users
-          (id, name, google_id)
-          VALUES ($id, $name, $google_id, $email, $password)
+          (${Object.keys({ id, ...createData}).join(", ")})
+          VALUES (${Object.keys(createObj).join(", ")})
           RETURNING *`
       )
       .get(createObj as unknown as Record<string, string>);
