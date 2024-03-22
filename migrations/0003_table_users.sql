@@ -2,7 +2,10 @@ CREATE TABLE users
 (
     id TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
-    google_id TEXT UNIQUE
+    google_id TEXT UNIQUE,
+    email TEXT UNIQUE,
+    password TEXT,
+    auth_type TEXT NOT NULL
 );
 
 CREATE TABLE sessions

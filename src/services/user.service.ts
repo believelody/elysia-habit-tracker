@@ -17,9 +17,6 @@ export const userService = {
     const result: User | null = db
       .query<User, string>("SELECT * FROM users WHERE id = ?")
       .get(userId);
-    // if (!result) {
-    //   throw new NotFoundError(`User does not exist`);
-    // }
 
     return result;
   },
@@ -28,9 +25,14 @@ export const userService = {
     const result: User | null = db
       .query<User, string>("SELECT * FROM users WHERE google_id = ? LIMIT 1")
       .get(googleId);
-    // if (!result) {
-    //   throw new NotFoundError(`User does not exist`);
-    // }
+
+    return result;
+  },
+
+  getByEmail(email: string): User | null | never {
+    const result: User | null = db
+      .query<User, string>("SELECT * FROM users WHERE email = ? LIMIT 1")
+      .get(email);
 
     return result;
   },
@@ -60,8 +62,8 @@ export const userService = {
     const result: User | null = db
       .query<User, Record<string, string>>(
         `UPDATE users 
-      SET name = $name
-      WHERE id = $id`
+          SET name = $name
+          WHERE id = $id`
       )
       .get(updateObj);
 
@@ -77,14 +79,17 @@ export const userService = {
       $name: createData.name,
       $id: createData.id,
       $google_id: createData.google_id,
+      $email: createData.email,
+      $password: createData.password,
+      $authType: createData.authType,
     };
 
     const result: User | null = db
       .query<User, Record<string, string>>(
         `INSERT INTO users
-      (id, name, google_id)
-      VALUES ($id, $name, $google_id)
-      RETURNING *`
+          (id, name, google_id)
+          VALUES ($id, $name, $google_id, $email, $password)
+          RETURNING *`
       )
       .get(createObj as unknown as Record<string, string>);
 

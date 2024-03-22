@@ -35,6 +35,13 @@ export const lucia = new Lucia(adapter, {
       secure: process.env.NODE_ENV === "production",
     },
   },
+  getUserAttributes: (attributes) => {
+    return {
+      // we don't need to expose the hashed password!
+      email: attributes.email,
+      name: attributes.name,
+    };
+  },
 });
 
 export const auth = {
@@ -44,5 +51,9 @@ export const auth = {
 declare module "lucia" {
   interface Register {
     Lucia: typeof lucia;
+    DatabaseUserAttributes: {
+      email: string;
+      name: string;
+    };
   }
 }

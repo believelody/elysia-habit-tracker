@@ -1,12 +1,12 @@
 import { Divider } from "../components/divider.component";
 import { Headings, Title } from "../components/headings.component";
 import { RootLayout } from "../components/layouts.component";
-import { LoginForm } from "../components/login.component";
+import { LoginForm } from "../components/auth.component";
 
 export function LoginPage() {
   return (
     <RootLayout
-      title="Please login or create an account"
+      title="Please login"
       class="flex flex-col p-2"
     >
       <Headings>
@@ -29,6 +29,14 @@ export function LoginPage() {
           }
         >
           Log in with Google
+        </a>
+        <a
+          href="/register"
+          class={
+            "text-indigo-400 text-center hover:underline hover:underline-offset-4"
+          }
+        >
+          No account ? Create one here !
         </a>
       </div>
     </RootLayout>

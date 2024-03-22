@@ -5,8 +5,10 @@ import { GoogleUser } from "../../auth";
 import { fetchApi } from "../../lib";
 import { userService } from "../../services/user.service";
 import { generateId } from "lucia";
+import { Argon2id } from "oslo/password";
 
-const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
+const googleAuthApiController = new Elysia({ prefix: "/google" })
+  .use(context)
   .get(
     "/",
     async ({ auth, set, cookie: { google_code_verifier, google_state } }) => {
@@ -39,7 +41,6 @@ const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
   .get(
     "/callback",
     async ({
-      db,
       set,
       query,
       cookie: { google_code_verifier, google_state, lucia_session },
@@ -65,7 +66,7 @@ const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
           },
         }
       );
-      function getOrCreateUser() {
+      function getUserOrCreate() {
         const existingUser = userService.getByGoogleId(googleUserResult.id);
 
         return (
@@ -74,10 +75,11 @@ const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
             google_id: googleUserResult.id,
             name: googleUserResult.name,
             id: generateId(15),
+            authType: "google",
           })
         );
       }
-      const user = getOrCreateUser();
+      const user = getUserOrCreate();
 
       const session = await lucia.createSession(user.id, {});
       const sessionCookie = lucia.createSessionCookie(session.id);
@@ -95,7 +97,40 @@ const googleAuthApiController = new Elysia({ prefix: "/google" }).use(context)
 
 export const authApiController = new Elysia({ prefix: "/auth" })
   .use(context)
-  .group("/login", (app) => app.use(googleAuthApiController))
+  .group("/login", (app) =>
+    app
+      .post(
+        "/",
+        async ({ body, set }) => {
+          const { email, password } = body;
+          const user = userService.getByEmail(email);
+          if (!user) {
+            set.status = "Bad Request";
+            return "Invalid email or password";
+          }
+          if (!user.password) {
+            set.status = "Internal Server Error";
+            return;
+          }
+          const validPassword = await new Argon2id().verify(
+            user.password,
+            password
+          );
+          if (!validPassword) {
+            set.status = "Bad Request";
+            return "Invalid password or password";
+          }
+          return set.redirect = "/";
+        },
+        {
+          body: t.Object({
+            email: t.String({ format: "email" }),
+            password: t.String(),
+          }),
+        }
+      )
+      .use(googleAuthApiController)
+  )
   .post("/logout", async ({ cookie: { lucia_session }, lucia, set }) => {
     if (!lucia_session?.value) {
       set.status = "Unauthorized";
