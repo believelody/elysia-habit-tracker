@@ -6,6 +6,7 @@ import { context } from "../../context";
 import { fetchApi } from "../../lib";
 import { userService } from "../../services/user.service";
 import { HomePage } from "../../pages/home.page";
+import { generateId } from "lucia";
 
 const googleAuthApiController = new Elysia({ prefix: "/google" })
   .use(context)
@@ -66,19 +67,20 @@ const googleAuthApiController = new Elysia({ prefix: "/google" })
           },
         }
       );
-      function getUserOrCreate() {
-        const existingUser = userService.getByGoogleId(googleUserResult.id);
+      async function getUserOrCreate() {
+        const existingUser = await userService.getByGoogleId(googleUserResult.id);
 
         return (
           existingUser ??
-          userService.create<"google">({
-            google_id: googleUserResult.id,
+          await userService.create({
+            googleId: googleUserResult.id,
             name: googleUserResult.name,
-            // id: generateId(15),
+            id: generateId(15),
+            authType: "google",
           })
         );
       }
-      const user = getUserOrCreate();
+      const user = await getUserOrCreate();
 
       const session = await lucia.createSession(user.id, {});
       const sessionCookie = lucia.createSessionCookie(session.id);
@@ -102,16 +104,16 @@ export const authApiController = new Elysia({ prefix: "/auth" })
         "/",
         async ({ body, set, cookie: { lucia_session }, lucia }) => {
           const { email, password } = body;
-          const user = userService.getByEmail(email);
+          const user = await userService.getByEmail(email);
           if (!user) {
             set.status = "Bad Request";
             return "Invalid email or password";
           }
           // Ensure that user is BasicUser
-          // if (!user.password) {
-          //   set.status = "Internal Server Error";
-          //   return;
-          // }
+          if (!user.password) {
+            set.status = "Internal Server Error";
+            return;
+          }
           const validPassword = await new Argon2id().verify(
             user.password,
             password
@@ -143,19 +145,21 @@ export const authApiController = new Elysia({ prefix: "/auth" })
       body: { email, password, name },
       lucia,
       html,
-      headers
+      headers,
     }) => {
-      const existingUser = userService.getByEmail(email);
+      const existingUser = await userService.getByEmail(email);
       if (existingUser) {
         set.status = "Conflict";
         set.headers["HX-Reswap"] = "innerHTML";
         return "User already exist";
       }
       const hashedPassword = await Bun.password.hash(password);
-      const newUser = userService.create<"basic">({
+      const newUser = await userService.create({
+        id: generateId(15),
         name,
         email,
         password: hashedPassword,
+        authType: "basic",
       });
       const session = await lucia.createSession(newUser.id, {});
       const sessionCookie = lucia.createSessionCookie(session.id);

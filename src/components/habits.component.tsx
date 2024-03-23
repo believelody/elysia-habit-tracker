@@ -1,4 +1,5 @@
 import { generateDatesByNumberOfDays } from "../lib";
+import { Habit } from "../models/habit.model";
 import {
   DangerButton,
   InfoButton,
@@ -8,21 +9,7 @@ import {
 import { FormField } from "./fields.component";
 import { Notification } from "./notifications.component";
 
-export type Habit = {
-  id: number;
-  title: string;
-  description: string;
-  color: string;
-  histories?: HabitHistory[];
-  userId: string;
-};
-
 export type HabitsProps = { habits: Habit[] };
-
-export type HabitHistory = {
-  date: string;
-  habitId: number;
-};
 
 export function CreateHabitForm() {
   const targetId = "habit-list";

@@ -3,7 +3,7 @@ import { context } from "../context";
 
 export const sessionUserMiddleware = new Elysia({ name: "Middleware.AuthAndRedirect" })
   .use(context)
-  .derive(async ({ cookie: { lucia_session }, lucia, path }) => {
+  .derive(async ({ cookie: { lucia_session }, lucia }) => {
     if (lucia_session.value) {
       const { user } = await lucia.validateSession(lucia_session.value);
       if (user) {
@@ -15,7 +15,6 @@ export const sessionUserMiddleware = new Elysia({ name: "Middleware.AuthAndRedir
 export const checkAuthMiddleware = new Elysia({ name: "Middleware.CheckAuth" })
   .use(context)
   .derive(async ({ cookie: { lucia_session }, lucia, path }) => {
-    console.log("In check auth middleware derive: ", path);
     if (lucia_session?.value) {
       const { user } = await lucia.validateSession(lucia_session.value);
       return { isAuth: !!user };
