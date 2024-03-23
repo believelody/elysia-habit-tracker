@@ -3,6 +3,7 @@ import { SecondaryButton } from "../components/buttons.component";
 import { Divider } from "../components/divider.component";
 import { Headings, SubTitle, Title } from "../components/headings.component";
 import { RootLayout } from "../components/layouts.component";
+import { SEO } from "../components/seo.component";
 
 export function HomePage({
   isAuth,
@@ -16,6 +17,7 @@ export function HomePage({
       class="flex flex-col gap-x-8"
       isHTMX={isHTMX}
     >
+      <SEO title={[title, subTitle].join(" : ")} />
       <Headings>
         <Title text={title} />
         <SubTitle text={subTitle} />
