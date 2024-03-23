@@ -6,6 +6,56 @@ export type CreateHabit = Omit<Habit, "id">;
 export type UpdateHabit = Partial<CreateHabit>;
 
 export const habitService = {
+  history: {
+  seed(userId: string) {
+    const habits = habitService.seed(userId);
+    habits?.forEach((habit) => {
+      const histories = generateDatesWithCompletion(90);
+      habit.histories = this.createBulk(
+        habit.id,
+        histories.filter((history) => history.completed).map(({ date }) => date)
+      );
+    });
+    return habits;
+  },
+  findOne(id: number, date: string): HabitHistory | null {
+    return db
+      .query<HabitHistory, { $id: number; $date: string }>(
+        "select * from habits_history where habit_id=$id and date=$date"
+      )
+      .get({ $id: id, $date: date });
+  },
+  findByHabitId(habitId: number) {
+    return db
+      .query<HabitHistory, { $habitId: number }>(
+        "select * from habits_history where habit_id=$habitId"
+      )
+      .all({ $habitId: habitId });
+  },
+  create(id: number, date: string) {
+    return db
+      .query<HabitHistory | null, { $id: number; $date: string }>(
+        "insert into habits_history (habit_id, date) values ($id, $date) returning *"
+      )
+      .get({ $id: id, $date: date });
+  },
+  createBulk(id: number, dates: string[]) {
+    return db
+      .query<HabitHistory, []>(
+        `insert into habits_history (habit_id, date) values ${dates.map(
+          (date) => `(${id}, "${date}")`
+        )} returning *`
+      )
+      .all();
+  },
+  delete(id: number, date: string) {
+    return db
+      .query<void, { $id: number; $date: string }>(
+        "delete from habits_history where habit_id=$id and date=$date"
+      )
+      .run({ $id: id, $date: date });
+  },
+},
   count(userId: string) {
     return db
       .query<{ "count(*)": number } | null, { $userId: string }>(
@@ -83,11 +133,6 @@ export const habitService = {
       (acc, [key, value]) => ({ ...acc, [`$${key}`]: value }),
       {}
     );
-    // const existingHabit = this.findById(id);
-
-    // if (!existingHabit) {
-    //   throw new Error(`habit with id = ${id} not found`);
-    // }
 
     return db
       .query<Habit | null, typeof tableColumns & { $id: number }>(
@@ -99,57 +144,6 @@ export const habitService = {
     return db
       .query<void, { $id: number }>("delete from habits where id=$id")
       .run({ $id: id });
-  },
-};
-
-export const habitHistoryService = {
-  seedHistory(userId: string) {
-    const habits = habitService.seed(userId);
-    habits?.forEach((habit) => {
-      const histories = generateDatesWithCompletion(90);
-      habit.histories = this.createBulk(
-        habit.id,
-        histories.filter((history) => history.completed).map(({ date }) => date)
-      );
-    });
-    return habits;
-  },
-  findOne(id: number, date: string): HabitHistory | null {
-    return db
-      .query<HabitHistory, { $id: number; $date: string }>(
-        "select * from habits_history where habit_id=$id and date=$date"
-      )
-      .get({ $id: id, $date: date });
-  },
-  findByHabitId(habitId: number) {
-    return db
-      .query<HabitHistory, { $habitId: number }>(
-        "select * from habits_history where habit_id=$habitId"
-      )
-      .all({ $habitId: habitId });
-  },
-  create(id: number, date: string) {
-    return db
-      .query<HabitHistory | null, { $id: number; $date: string }>(
-        "insert into habits_history (habit_id, date) values ($id, $date) returning *"
-      )
-      .get({ $id: id, $date: date });
-  },
-  createBulk(id: number, dates: string[]) {
-    return db
-      .query<HabitHistory, []>(
-        `insert into habits_history (habit_id, date) values ${dates.map(
-          (date) => `(${id}, "${date}")`
-        )} returning *`
-      )
-      .all();
-  },
-  delete(id: number, date: string) {
-    return db
-      .query<void, { $id: number; $date: string }>(
-        "delete from habits_history where habit_id=$id and date=$date"
-      )
-      .run({ $id: id, $date: date });
   },
 };
 

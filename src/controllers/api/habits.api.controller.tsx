@@ -60,7 +60,7 @@ export const habitApiController = new Elysia({
     }
   )
   .post("/samples", ({ user, html }) => {
-    const habits = habitHistoryService.seedHistory(user.id);
+    const habits = habitService.history.seed(user.id);
     return html(<Habits habits={habits} />);
   })
   .group(
@@ -96,14 +96,14 @@ export const habitApiController = new Elysia({
               ctx.set.status = "Internal Server Error";
               return;
             }
-            let habitHistory = habitHistoryService.findOne(
+            let habitHistory = habitService.history.findOne(
               existingHabit.id,
               date
             );
             if (habitHistory) {
-              habitHistoryService.delete(existingHabit.id, habitHistory.date);
+              habitService.history.delete(existingHabit.id, habitHistory.date);
             } else {
-              habitHistoryService.create(existingHabit.id, date);
+              habitService.history.create(existingHabit.id, date);
             }
             return ctx.html(
               <HabitHistoryItem
