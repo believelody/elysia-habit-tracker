@@ -1,5 +1,5 @@
+import { type Habit } from "../db/schema";
 import { generateDatesByNumberOfDays } from "../lib";
-import { Habit } from "../models/habit.model";
 import {
   DangerButton,
   InfoButton,
@@ -7,7 +7,7 @@ import {
   SecondaryButton,
 } from "./buttons.component";
 import { FormField } from "./fields.component";
-import { Notification } from "./notifications.component";
+import { type Notification } from "./notifications.component";
 
 export type HabitsProps = { habits: Habit[] };
 
@@ -24,7 +24,6 @@ export function CreateHabitForm() {
       x-ref={createHabitFormRef}
       x-init={`
         $el.addEventListener('htmx:afterRequest', (event) => {
-          console.log(event.detail);
           if(event.detail.xhr.status === 200){
             $el.reset();
             showForm = false;

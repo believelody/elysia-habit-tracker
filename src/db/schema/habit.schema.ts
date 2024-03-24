@@ -18,15 +18,39 @@ export const habitSchema = sqliteTable("habits", {
 
 export const habitHistorySchema = sqliteTable("habits_history", {
     date: text("date").notNull(),
-    habitId: text("habit_id").notNull().references(() => habitSchema.id),
+    habitId: integer("habit_id").notNull(),
 });
 
-export const habitUserRelations = relations(habitSchema, ({ one }) => ({
+export const habitRelations = relations(habitSchema, ({ one, many }) => ({
   user: one(userSchema, {
     fields: [habitSchema.userId],
-    references: [userSchema.id]
+    references: [userSchema.id],
   }),
+  histories: many(habitHistorySchema),
 }));
 
-export type Habit = typeof habitSchema.$inferSelect;
+export const habitHistoryRelations = relations(
+  habitHistorySchema,
+  ({ one }) => ({
+    user: one(habitSchema, {
+      fields: [habitHistorySchema.habitId],
+      references: [habitSchema.id],
+    }),
+  })
+);
+
+export type SelectHabit = typeof habitSchema.$inferSelect;
 export type InsertHabit = typeof habitSchema.$inferInsert;
+export type Habit = {
+  id: SelectHabit["id"];
+  title: SelectHabit["title"];
+  description: SelectHabit["description"];
+  color: SelectHabit["color"];
+  userId: SelectHabit["userId"];
+  created_at: SelectHabit["created_at"];
+  updated_at: SelectHabit["updated_at"];
+  histories?: HabitHistory[];
+}
+
+export type HabitHistory = typeof habitHistorySchema.$inferSelect;
+export type HabitHistoryInsert = typeof habitHistorySchema.$inferInsert;

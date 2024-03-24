@@ -29,4 +29,4 @@ if (config.db.type === "local-replica") {
   await client.sync();
 }
 
-export const db = drizzle(client, { schema, logger: true });
+export const db = drizzle(client, { schema, logger: false });

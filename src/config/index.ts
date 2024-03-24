@@ -21,7 +21,7 @@ const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     GOOGLE_REDIRECT_URI_PATH: z.string(),
     HOST_URL: z.string().min(1),
-    PORT: z.number(),
+    PORT: z.string(),
     TURSO_API_KEY: z.string().min(1),
   },
   runtimeEnv: process.env,
@@ -45,7 +45,7 @@ export const config = {
     ),
   },
   baseURL: new URL(env.HOST_URL + ":" + env.PORT),
-  port: env.PORT,
+  port: Number(env.PORT) || 3000,
   turso: {
     apiKey: env.TURSO_API_KEY
   }

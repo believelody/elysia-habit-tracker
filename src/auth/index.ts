@@ -1,8 +1,8 @@
 import { Google } from "arctic";
 import { config } from "../config";
-import { BunSQLiteAdapter } from "@lucia-auth/adapter-sqlite";
+import { LibSQLAdapter } from "@lucia-auth/adapter-sqlite";
 import { Lucia } from "lucia";
-import { db } from "../db";
+import { client, db } from "../db";
 
 export type GoogleProfile = {
   id: string;
@@ -15,15 +15,15 @@ export type GoogleProfile = {
   locale: string;
 };
 
-const { google } = config.credentials;
+const { credentials, redirectURI } = config.google;
 
 const googleAuth = new Google(
-  google.clientId,
-  google.clientSecret,
-  google.redirectURI.href
+  credentials.clientId,
+  credentials.clientSecret,
+  redirectURI.href
 );
 
-const adapter = new BunSQLiteAdapter(db, {
+const adapter = new LibSQLAdapter(client, {
   user: "users",
   session: "sessions",
 });

@@ -16,7 +16,7 @@ export const habitsController = new Elysia({ prefix: "/habits" })
     },
     (app) =>
       app.get("/", async ({ html, user }) => {
-        const habits = habitService.findManyByUserId(user.id);
+        const habits = await habitService.findManyByUserId(user.id);
         return html(<HabitsPage habits={habits} />);
       })
   );

@@ -1,212 +1,191 @@
-import { type HabitHistory, type Habit } from "../components/habits.component";
+import { eq, sql, and } from "drizzle-orm";
 import { db } from "../db";
+import { type Habit, habitHistorySchema, habitSchema, type InsertHabit } from "../db/schema";
 import { generateDatesWithCompletion } from "../lib";
-
-export type CreateHabit = Omit<Habit, "id">;
-export type UpdateHabit = Partial<CreateHabit>;
 
 export const habitService = {
   history: {
-  seed(userId: string) {
-    const habits = habitService.seed(userId);
-    habits?.forEach((habit) => {
-      const histories = generateDatesWithCompletion(90);
-      habit.histories = this.createBulk(
-        habit.id,
-        histories.filter((history) => history.completed).map(({ date }) => date)
+    async seed(userId: string) {
+      const habits = await habitService.seed(userId);
+      const result = await Promise.all(
+        habits?.map(async (habit) => {
+          const histories = generateDatesWithCompletion(90);
+          habit.histories = await this.createBulk(
+            habit.id,
+            histories
+              .filter((history) => history.completed)
+              .map(({ date }) => date)
+          );
+          return habit;
+        })
       );
-    });
-    return habits;
-  },
-  findOne(id: number, date: string): HabitHistory | null {
-    return db
-      .query<HabitHistory, { $id: number; $date: string }>(
-        "select * from habits_history where habit_id=$id and date=$date"
-      )
-      .get({ $id: id, $date: date });
-  },
-  findByHabitId(habitId: number) {
-    return db
-      .query<HabitHistory, { $habitId: number }>(
-        "select * from habits_history where habit_id=$habitId"
-      )
-      .all({ $habitId: habitId });
-  },
-  create(id: number, date: string) {
-    return db
-      .query<HabitHistory | null, { $id: number; $date: string }>(
-        "insert into habits_history (habit_id, date) values ($id, $date) returning *"
-      )
-      .get({ $id: id, $date: date });
-  },
-  createBulk(id: number, dates: string[]) {
-    return db
-      .query<HabitHistory, []>(
-        `insert into habits_history (habit_id, date) values ${dates.map(
-          (date) => `(${id}, "${date}")`
-        )} returning *`
-      )
-      .all();
-  },
-  delete(id: number, date: string) {
-    return db
-      .query<void, { $id: number; $date: string }>(
-        "delete from habits_history where habit_id=$id and date=$date"
-      )
-      .run({ $id: id, $date: date });
-  },
-},
-  count(userId: string) {
-    return db
-      .query<{ "count(*)": number } | null, { $userId: string }>(
-        "select count(*) from habits where user_id=$userId"
-      )
-      .get({ $userId: userId });
-  },
-  seed(userId: string) {
-    return db
-      .query<Habit, { $userId: string }>(querySeed)
-      .all({ $userId: userId });
-  },
-  findById(id: number) {
-    return db
-      .query<Habit | null, { $id: number }>("select * from habits where id=$id")
-      .get({ $id: id });
-  },
-  findManyByUserId(userId: string) {
-    type QueryResult = {
-      id: Habit["id"];
-      description: Habit["description"];
-      title: Habit["title"];
-      color: Habit["color"];
-      userId: Habit["userId"];
-      date: HabitHistory["date"];
-    };
-    const results = db
-      .query<QueryResult, { $userId: string }>(
-        "select habits.*, habits_history.date from habits inner join habits_history on habits.id = habits_history.habit_id where habits.user_id=$userId"
-      )
-      .all({ $userId: userId });
-    return results.reduce<Habit[]>((acc, cur) => {
-      const index = acc.findIndex((item) => item.id === cur.id);
-      if (index < 0) {
-        acc.push({
-          id: cur.id,
-          title: cur.title,
-          description: cur.description,
-          color: cur.color,
-          userId: cur.userId,
-          histories: [{ date: cur.date, habitId: cur.id }],
-        });
-      } else {
-        acc[index].histories?.push({ date: cur.date, habitId: cur.id });
-      }
-      return acc;
-    }, []);
-  },
-  create({ title, description, color, userId }: CreateHabit) {
-    return db
-      .query<
-        Habit | null,
-        {
-          $title: string;
-          $description: string;
-          $color: string;
-          $userId: string;
-        }
-      >(
-        "insert into habits (title, description, color, user_id) values ($title, $description, $color, $userId) returning *"
-      )
-      .get({
-        $title: title,
-        $description: description,
-        $color: color,
-        $userId: userId,
+      return result;
+    },
+    async findOne(id: number, date: string) {
+      const result = await db.query.habitHistorySchema.findFirst({
+        where(fields, { and, eq }) {
+          return and(eq(fields.date, date), eq(fields.habitId, id));
+        },
       });
+      return result;
+    },
+    async findByHabitId(habitId: number) {
+      const result = await db.query.habitHistorySchema.findMany({
+        where(fields, { eq }) {
+          return eq(fields.habitId, habitId);
+        },
+      });
+      return result;
+    },
+    async create(id: number, date: string) {
+      const result = await db
+        .insert(habitHistorySchema)
+        .values({ date, habitId: id })
+        .returning()
+        .get();
+      return result;
+    },
+    async createBulk(id: number, dates: string[]) {
+      const result = await db
+        .insert(habitHistorySchema)
+        .values(dates.map((date) => ({ date, habitId: id })))
+        .returning();
+      return result;
+    },
+    async delete(id: number, date: string) {
+      const result = await db
+        .delete(habitHistorySchema)
+        .where(
+          and(
+            eq(habitHistorySchema.date, date),
+            eq(habitHistorySchema.habitId, id)
+          )
+        )
+        .returning()
+        .get();
+      return result;
+    },
   },
-  updateById(id: number, body: UpdateHabit) {
-    const columnsToUpdate = Object.keys(body)
-      .map((key) => `${key}=$${key}`)
-      .join(", ");
+  async count(userId: string) {
+    const result = await db
+      .select({ count: sql`count(*)`.mapWith(Number) })
+      .from(habitSchema)
+      .where(eq(habitSchema.userId, userId));
 
-    const tableColumns = Object.entries(body).reduce(
-      (acc, [key, value]) => ({ ...acc, [`$${key}`]: value }),
-      {}
-    );
-
-    return db
-      .query<Habit | null, typeof tableColumns & { $id: number }>(
-        `update habits set ${columnsToUpdate} where id=$id returning *`
-      )
-      .get({ $id: id, ...tableColumns });
+    return result;
   },
-  deleteById(id: number) {
-    return db
-      .query<void, { $id: number }>("delete from habits where id=$id")
-      .run({ $id: id });
+  async seed(userId: string) {
+    await db.insert(habitSchema).values(getSampleHabits(userId));
+    const result = await db.query.habitSchema.findMany({
+      with: { histories: true },
+    });
+    return result;
+  },
+  async findById(id: number): Promise<Habit | undefined> {
+    const result = await db.query.habitSchema.findFirst({
+      where: (fields, { eq }) => eq(fields.id, id),
+      with: {
+        histories: true,
+      },
+    });
+    return result;
+  },
+  async findManyByUserId(userId: string): Promise<Habit[]> {
+    const result = await db.query.habitSchema.findMany({
+      where: (fields, { eq }) => eq(fields.userId, userId),
+      with: {
+        histories: true,
+      },
+    });
+    return result;
+  },
+  async create(body: Omit<InsertHabit, "id">): Promise<Habit | undefined> {
+    const [{id}] = await db
+      .insert(habitSchema)
+      .values(body)
+      .returning({ id: habitSchema.id });
+    const result = await this.findById(id);
+    return result;
+  },
+  async updateById(
+    id: number,
+    body: { title: Habit["title"]; description: Habit["description"] }
+  ) {
+    await db.update(habitSchema).set(body).where(eq(habitSchema.id, id));
+    const result = await this.findById(id);
+    return result;
+  },
+  async deleteById(id: number) {
+    const result = await db
+      .delete(habitSchema)
+      .where(eq(habitSchema.id, id))
+      .returning()
+      .get();
+    return result;
   },
 };
 
-const querySeed = `
-    INSERT INTO habits (title, description, color, user_id)
-    VALUES (
-        "Meditation",
-        "Practice mindfulness for 10 minutes",
-        "#F7D354",
-        $userId
-    ),
-    (
-        "Exercise",
-        "Go for a 30-minute walk or run",
-        "#9B59B6",
-        $userId
-    ),
-    (
-        "Journaling",
-        "Write down your thoughts and feelings",
-        "#F0E68C",
-        $userId
-    ),
-    (
-        "Reading",
-        "Read for 30 minutes before bed",
-        "#66B3FF",
-        $userId
-    ),
-    (
-        "Healthy eating",
-        "Eat more fruits, vegetables, and whole grains",
-        "#90EE90",
-        $userId
-    ),
-    (
-        "Learning a new skill",
-        "Spend 30 minutes learning something new",
-        "#E0627C",
-        $userId
-    ),
-    (
-        "Gratitude practice",
-        "Write down 3 things you're grateful for",
-        "#FFD700",
-        $userId
-    ),
-    (
-        "Drinking water",
-        "Drink 8 glasses of water per day",
-        "#C0C0C0",
-        $userId
-    ),
-    (
-        "Tidying up",
-        "Spend 15 minutes decluttering your space",
-        "#FFA500",
-        $userId
-    ),
-    (
-        "Getting enough sleep",
-        "Aim for 7-8 hours of sleep per night",
-        "#3299D8",
-        $userId
-    ) RETURNING *;
-`;
+function getSampleHabits(userId: string) {
+  return [
+    {
+      title: "Meditation",
+      description: "Practice mindfulness for 10 minutes",
+      color: "#F7D354",
+      userId,
+    },
+    {
+      title: "Exercise",
+      description: "Go for a 30-minute walk or run",
+      color: "#9B59B6",
+      userId,
+    },
+    {
+      title: "Journaling",
+      description: "Write down your thoughts and feelings",
+      color: "#F0E68C",
+      userId,
+    },
+    {
+      title: "Reading",
+      description: "Read for 30 minutes before bed",
+      color: "#66B3FF",
+      userId,
+    },
+    {
+      title: "Healthy eating",
+      description: "Eat more fruits, vegetables, and whole grains",
+      color: "#90EE90",
+      userId,
+    },
+    {
+      title: "Learning a new skill",
+      description: "Spend 30 minutes learning something new",
+      color: "#E0627C",
+      userId,
+    },
+    {
+      title: "Gratitude practice",
+      description: "Write down 3 things you're grateful for",
+      color: "#FFD700",
+      userId,
+    },
+    {
+      title: "Drinking water",
+      description: "Drink 8 glasses of water per day",
+      color: "#C0C0C0",
+      userId,
+    },
+    {
+      title: "Tidying up",
+      description: "Spend 15 minutes decluttering your space",
+      color: "#FFA500",
+      userId,
+    },
+    {
+      title: "Getting enough sleep",
+      description: "Aim for 7-8 hours of sleep per night",
+      color: "#3299D8",
+      userId,
+    },
+  ];
+}

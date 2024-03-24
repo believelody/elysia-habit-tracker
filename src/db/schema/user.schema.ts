@@ -19,8 +19,8 @@ export const sessionSchema = sqliteTable("sessions", {
     .references(() => userSchema.id),
 });
 
-export const userToHabitRelation = relations(userSchema, ({ many }) => ({
-    habits: many(habitSchema)
+export const userRelations = relations(userSchema, ({ many }) => ({
+  habits: many(habitSchema),
 }));
 
 export type User = typeof userSchema.$inferSelect;

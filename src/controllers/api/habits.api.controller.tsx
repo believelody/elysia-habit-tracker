@@ -11,23 +11,22 @@ import {
 } from "../../components/notifications.component";
 import { sessionUserMiddleware } from "../../middlewares/auth.middleware";
 import {
-  habitHistoryService,
-  habitService,
+  habitService
 } from "../../services/habits.service";
 
 export const habitApiController = new Elysia({
   prefix: "/habits",
 })
   .use(sessionUserMiddleware)
-  .get("/", ({ html, user }) => {
-    const habits = habitService.findManyByUserId(user.id);
+  .get("/", async ({ html, user }) => {
+    const habits = await habitService.findManyByUserId(user.id);
     return html(<Habits habits={habits} />);
   })
   .post(
     "/",
     async ({ body, set, html, user }) => {
-      const habitsLength = habitService.count(user.id);
-      const createdHabit = habitService.create({ ...body, userId: user.id });
+      const habitsCount = await habitService.count(user.id);
+      const createdHabit = await habitService.create({ ...body, userId: user.id });
       if (body.color === "#000000") {
         set.status = "Internal Server Error";
         return "Please select another color than black";
@@ -37,7 +36,7 @@ export const habitApiController = new Elysia({
         return "An error occured";
       }
       set.status = "Created";
-      if (habitsLength && habitsLength["count(*)"] === 0) {
+      if (habitsCount && habitsCount.length === 0) {
         set.headers["HX-Reswap"] = "outerHTML";
         return <Habits habits={[createdHabit]} />;
       }
@@ -59,8 +58,8 @@ export const habitApiController = new Elysia({
       }),
     }
   )
-  .post("/samples", ({ user, html }) => {
-    const habits = habitService.history.seed(user.id);
+  .post("/samples", async ({ user, html }) => {
+    const habits = await habitService.history.seed(user.id);
     return html(<Habits habits={habits} />);
   })
   .group(
@@ -89,27 +88,27 @@ export const habitApiController = new Elysia({
         )
         .post(
           "/toggle/:date",
-          (ctx) => {
+          async (ctx) => {
             const { date, id } = ctx.params;
-            const existingHabit = habitService.findById(id);
+            const existingHabit = await habitService.findById(id);
             if (!existingHabit) {
               ctx.set.status = "Internal Server Error";
               return;
             }
-            let habitHistory = habitService.history.findOne(
+            let habitHistory = await habitService.history.findOne(
               existingHabit.id,
               date
             );
             if (habitHistory) {
-              habitService.history.delete(existingHabit.id, habitHistory.date);
+              await habitService.history.delete(existingHabit.id, habitHistory.date);
             } else {
-              habitService.history.create(existingHabit.id, date);
+              await habitService.history.create(existingHabit.id, date);
             }
             return ctx.html(
               <HabitHistoryItem
                 habit={existingHabit}
                 date={date}
-                completed={habitHistory === null}
+                completed={!habitHistory}
               />
             );
           },
@@ -124,7 +123,7 @@ export const habitApiController = new Elysia({
           "/",
           async ({ body, set, html, params }) => {
             const { id } = params;
-            const updatedHabit = habitService.updateById(id, body);
+            const updatedHabit = await habitService.updateById(id, body);
             if (!updatedHabit) {
               set.status = "Internal Server Error";
               return "An error occured";
@@ -150,14 +149,14 @@ export const habitApiController = new Elysia({
         )
         .delete("/", async (ctx) => {
           const { id } = ctx.params;
-          habitService.deleteById(id);
+          await habitService.deleteById(id);
           ctx.set.status = "No Content";
-          const habitsLength = habitService.count(ctx.user.id);
+          const habitsCount = await habitService.count(ctx.user.id);
           const notification: Notification = {
             type: "success",
             message: "Habit deleted successfully",
           };
-          if (habitsLength && habitsLength["count(*)"] === 0) {
+          if (habitsCount && habitsCount.length === 0) {
             ctx.set.headers["HX-Trigger"] = "load-habits";
           }
           return ctx.html(<NotificationItem {...notification} />);
